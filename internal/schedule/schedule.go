@@ -1,8 +1,9 @@
 package schedule
 
 import (
-	"log"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Returns whether or not the current time is within the operating hours
@@ -10,7 +11,7 @@ import (
 func IsInOperatingHours() bool {
 	loc, err := time.LoadLocation("Europe/London")
 	if err != nil {
-		log.Printf("error loading location: %s", err)
+		log.Error().Err(err).Msg("error loading location")
 		return false
 	}
 	currentTime := time.Now().In(loc)

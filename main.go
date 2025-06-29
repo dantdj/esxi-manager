@@ -1,22 +1,26 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/dantdj/esxi-manager/internal/esxi"
 	"github.com/dantdj/esxi-manager/internal/schedule"
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	retryDelay := 30
 	retryCount := 5
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("failed to load .env")
+		log.Fatal().Err(err).Msg("failed to load .env")
 	}
 
 	connection := esxi.Connection{
@@ -27,34 +31,32 @@ func main() {
 	}
 
 	online := connection.ServerReachable()
-	log.Printf("server online on manager start-up: %t", online)
+	log.Info().Bool("online", online).Msg("server online on manager start-up")
 
 	for {
 		if !online && schedule.IsInOperatingHours() {
-			log.Printf("turning server on")
+			log.Info().Msg("turning server on")
 
 			err := connection.SendTurnOnCommand()
 			if err != nil {
-				log.Printf("failed to turn on server: %s", err)
+				log.Error().Err(err).Msg("failed to turn on server")
 				// Try again later
 				time.Sleep(10 * time.Second)
 				continue
 			}
 
-			for {
-				retries := 0
+			for i := 0; i < retryCount; i++ {
 				if connection.ServerReachable() {
-					log.Printf("server online")
+					log.Info().Msg("server online")
 					break
 				}
 
-				if retries >= retryCount {
-					log.Printf("server attempted to start, but isn't online after %d seconds", retryDelay*retryCount)
+				if i == retryCount-1 {
+					log.Warn().Int("retries", retryCount).Int("delay", retryDelay).Msg("server attempted to start, but isn't online")
 				}
 
-				log.Printf("couldn't contact server, retrying in %ds...\n", retryDelay)
+				log.Info().Int("delaySeconds", retryDelay).Msg("couldn't contact server, retrying...")
 
-				retries++
 				time.Sleep(time.Duration(retryDelay) * time.Second)
 			}
 
@@ -63,11 +65,11 @@ func main() {
 			connection.SetMaintainanceMode(false)
 			connection.BootAllVMs()
 
-			log.Println("server started")
+			log.Info().Msg("server started")
 		}
 
 		if online && !schedule.IsInOperatingHours() {
-			log.Printf("turning server off")
+			log.Info().Msg("turning server off")
 
 			connection.ShutDownAllVMs()
 
@@ -79,23 +81,22 @@ func main() {
 
 			err := connection.SendTurnOffCommand()
 			if err != nil {
-				log.Printf("failed to turn off server: %s", err)
+				log.Error().Err(err).Msg("failed to turn off server")
 				// Try again
 				continue
 			}
 
-			for {
-				retries := 0
+			for i := 0; i < retryCount; i++ {
 				if !connection.ServerReachable() {
-					log.Printf("server offline")
+					log.Info().Msg("server offline")
 					break
 				}
 
-				if retries >= retryCount {
-					log.Printf("server attempted to shutdown, but isn't offline after %d seconds", retryDelay*retryCount)
+				if i == retryCount-1 {
+					log.Warn().Int("retries", retryCount).Int("delay", retryDelay).Msg("server attempted to shutdown, but isn't offline")
 				}
 
-				retries++
+				log.Info().Int("delay", retryDelay).Msg("server still online, retrying shutdown check...")
 				time.Sleep(time.Duration(retryDelay) * time.Second)
 			}
 

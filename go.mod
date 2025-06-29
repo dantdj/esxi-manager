@@ -3,6 +3,7 @@ module github.com/dantdj/esxi-manager
 go 1.19
 
 require (
+	github.com/joho/godotenv v1.5.1
 	github.com/mdlayher/wol v0.0.0-20220221231636-b763a792253a
 	github.com/rs/zerolog v1.32.0
 	github.com/sfreiberg/simplessh v0.0.0-20220719182921-185eafd40485
@@ -10,7 +11,6 @@ require (
 
 require (
 	github.com/davidmz/go-pageant v1.0.2 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/native v1.0.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
