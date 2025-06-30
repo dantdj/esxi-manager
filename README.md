@@ -22,4 +22,4 @@ The program supports loading these from a .env file in the same directory as the
 
 ## Future plans
 
-* Web interface to check on server status and make schedule changes
+* Integrating the scheduling into the web interface, and make the scheduler and web interface usable at the same time
