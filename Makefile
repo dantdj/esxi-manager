@@ -1,4 +1,4 @@
-.PHONY: help setup build-frontend build-backend build dev-frontend dev-backend dev clean install-deps
+.PHONY: help setup build-frontend build-backend build build-pi dev-frontend dev-backend dev clean install-deps
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "  build-frontend - Build React app for production"
 	@echo "  build-backend  - Build Go binary"
 	@echo "  build          - Build both frontend and backend"
+	@echo "  build-pi       - Build for Raspberry Pi"
 	@echo "  dev-frontend   - Start frontend dev server (port 5173)"
 	@echo "  dev-backend    - Start backend dev server (port 8080)"
 	@echo "  dev            - Start both dev servers concurrently"
@@ -31,12 +32,18 @@ build-frontend:
 # Build Go backend
 build-backend:
 	@echo "Building backend..."
-	go build -o esxi-manager main.go
+	go build -o esximan .
 	@echo "Backend build complete!"
 
 # Build everything
 build: build-frontend build-backend
 	@echo "Full build complete!"
+
+# Build for Raspberry Pi
+build-pi:
+	@echo "Building for Raspberry Pi..."
+	GOOS=linux GOARCH=arm go build -o esximan-pi .
+	@echo "Raspberry Pi build complete!"
 
 # Start frontend dev server
 dev-frontend:
@@ -68,4 +75,5 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf web/dist/
 	rm -f esxi-manager
+	rm -f esxi-manager-pi
 	@echo "Clean complete!"
